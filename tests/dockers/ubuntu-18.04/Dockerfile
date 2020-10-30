@@ -129,17 +129,17 @@ RUN mkdir -p /var/www/html/dl.bintray.com/boostorg/release/1.64.0/source
 WORKDIR /var/www/html/dl.bintray.com/boostorg/release/1.64.0/source
 RUN wget https://dl.bintray.com/boostorg/release/1.64.0/source/boost_1_64_0.tar.bz2
 
-RUN mkdir -p /var/www/html/dl.bintray.com/boostorg/release/1.73.0/source
-WORKDIR /var/www/html/dl.bintray.com/boostorg/release/1.73.0/source
-RUN wget https://dl.bintray.com/boostorg/release/1.73.0/source/boost_1_73_0.tar.bz2
+RUN mkdir -p /var/www/html/dl.bintray.com/boostorg/release/1.74.0/source
+WORKDIR /var/www/html/dl.bintray.com/boostorg/release/1.74.0/source
+RUN wget https://dl.bintray.com/boostorg/release/1.74.0/source/boost_1_74_0.tar.bz2
 
 RUN mkdir -p /var/www/html/dl.bintray.com/boostorg/develop
 WORKDIR  /var/www/html/dl.bintray.com/boostorg/develop
-RUN wget https://dl.bintray.com/boostorg/develop/boost_1_74_0-snapshot.tar.bz2
+RUN wget https://dl.bintray.com/boostorg/develop/boost_1_75_0-snapshot.tar.bz2
 
 RUN mkdir -p /var/www/html/dl.bintray.com/boostorg/master
 WORKDIR  /var/www/html/dl.bintray.com/boostorg/master
-RUN wget https://dl.bintray.com/boostorg/master/boost_1_74_0-snapshot.tar.bz2
+RUN wget https://dl.bintray.com/boostorg/master/boost_1_75_0-snapshot.tar.bz2
 
 # Clone all boostorg repos
 RUN mkdir -p /var/www/git/boostorg/
