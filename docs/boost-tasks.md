@@ -41,6 +41,9 @@ Use the --help flag to see all options.
 ```
 
 This script downloads a release from bintray. Installs it locally. It also updates the local var/ copy of the website in many ways, using the site-tools scripts.
+- site-tools/update-doc-list.php
+- site-tools/set-release-status.php
+- site-tools/update-pages.php
 
 Detailed Steps:
 - Clones boostorg/website into var/data/repos/website.  A shallow clone.
@@ -105,7 +108,7 @@ Detailed Steps:
 - Update documentation list. This is a passthru to the website's site-tools: passthru('php '. "{$website_repo->path}/site-tools/update-doc-list.php ". "--quiet {$mirror->mirror\_root}/boostorg/boost.git {$version}", $status); It is uses "attemptAndPush", so it should commit and push the website to github.com if "push-to-repo: true" is set in var/config.neon
 - Clone boost, branch develop, in var/data/super/develop
 - Clone boost, branch master, in var/data/super/master
-- Update maintainer list for develop. This is a passthru to the website's site-tools: passthru('php '. "{$website_repo->path}/site-tools/update-repo.php ". "{$super->path} {$super->branch}", $status);  It is uses "attemptAndPush", so it should commit and push the website to github.com if "push-to-repo: true" is set in var/config.neon
+- Update maintainer list for develop. This is a passthru to the website's site-tools: passthru('php '. "{$website_repo->path}/site-tools/update-repo.php ". "{$super->path} {$super->branch}", $status);  It uses "attemptAndPush", so it should commit and push the superproject to github.com if "push-to-repo: true" is set in var/config.neon
 - Update maintainer list for master, like previous step.
 
 ------------------------------------------------------------------------------------------------------------------------------------
