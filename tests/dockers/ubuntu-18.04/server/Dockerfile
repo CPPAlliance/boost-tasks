@@ -54,6 +54,10 @@ RUN ssh-keygen -t rsa -N "" -f id_rsa && \
 RUN cd /home/www/ && git clone https://github.com/samd2/website live.boost.org && \
     git clone -b beta https://github.com/samd2/website beta.boost.org 
 
+RUN cd /home/www/live.boost.org/ && git clone -b website https://github.com/boostorg/build && \
+    cd /home/www/beta.boost.org/ && git clone -b website https://github.com/boostorg/build && \
+    cd /home/www/shared && echo "<?php\ndefine('BOOST_WEBSITE_SHARED_DIR', '/home/www/shared');\n?>" > config.php 
+
 # Get boost-tasks
 RUN cd /home/www/shared/ && \
     git clone https://github.com/CPPAlliance/boost-tasks tasks
@@ -63,9 +67,16 @@ RUN cd /home/www/shared/archives/live/ && \
     wget http://dl.bintray.com/boostorg/release/1.74.0/source/boost_1_74_0.tar.gz && \
     tar -xvf boost_1_74_0.tar.gz
 
+COPY prepare.sh /tmp/
+
+# composer
+RUN apt-get install -y composer
+WORKDIR /home/www/shared/tasks
+RUN composer install
+
 EXPOSE 80
 EXPOSE 443
 
 # LAST SECTION --------------------
 #WORKDIR /opt/github/CPPAlliance/boost-tasks
-CMD sleep 1000000000
+CMD service apache2 start && sleep 1000000000
