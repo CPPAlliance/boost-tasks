@@ -51,12 +51,15 @@ RUN ssh-keygen -t rsa -N "" -f id_rsa && \
     mkdir -p /home/www/shared/archives/live && \
     chown -R www:www /home/www 
 
-RUN cd /home/www/ && git clone https://github.com/samd2/website live.boost.org && \
-    git clone -b beta https://github.com/samd2/website beta.boost.org 
+# Website clone had been here, let's move it lower to reduce docker rebuilds.
 
-RUN cd /home/www/live.boost.org/ && git clone -b website https://github.com/boostorg/build && \
-    cd /home/www/beta.boost.org/ && git clone -b website https://github.com/boostorg/build && \
-    cd /home/www/shared && echo "<?php\ndefine('BOOST_WEBSITE_SHARED_DIR', '/home/www/shared');\n?>" > config.php 
+# The website branch is no longer present in boostorg/build
+# RUN cd /home/www/live.boost.org/ && git clone -b website https://github.com/boostorg/build && \
+#     cd /home/www/beta.boost.org/ && git clone -b website https://github.com/boostorg/build
+
+RUN cd /home/www/shared && echo "<?php\ndefine('BOOST_WEBSITE_SHARED_DIR', '/home/www/shared');\n?>" > config.php
+# define('STATIC_DIR', '/home/www/shared/archives/live'); is already a default found in common/code/boost_config.php
+# and therefore not required.
 
 # Get boost-tasks
 RUN cd /home/www/shared/ && \
@@ -64,8 +67,8 @@ RUN cd /home/www/shared/ && \
 
 # Download archives
 RUN cd /home/www/shared/archives/live/ && \
-    wget http://dl.bintray.com/boostorg/release/1.74.0/source/boost_1_74_0.tar.gz && \
-    tar -xvf boost_1_74_0.tar.gz
+    wget http://dl.bintray.com/boostorg/release/1.75.0/source/boost_1_75_0.tar.gz && \
+    tar -xvf boost_1_75_0.tar.gz
 
 COPY prepare.sh /tmp/
 
@@ -73,6 +76,10 @@ COPY prepare.sh /tmp/
 RUN apt-get install -y composer
 WORKDIR /home/www/shared/tasks
 RUN composer install
+
+# download main website code
+RUN cd /home/www/ && git clone https://github.com/samd2/website live.boost.org && \
+    git clone -b beta https://github.com/samd2/website beta.boost.org
 
 EXPOSE 80
 EXPOSE 443
