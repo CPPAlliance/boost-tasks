@@ -1,0 +1,180 @@
+#!/usr/bin/env php
+<?php
+
+require_once(__DIR__.'/vendor/autoload.php');
+
+use BoostTasks\Settings;
+use BoostTasks\ArtifactoryCache;
+use BoostTasks\Documentation;
+use BoostTasks\CommandLineOptions;
+use BoostTasks\BoostRepo;
+use BoostTasks\WebsiteRepo;
+use BoostTasks\Log;
+// use RuntimeException;
+
+define('GET_RELEASE_DOWNLOAD_USAGE', "
+Usage: {} version
+
+Downloads a release from artifactory. Example versions:
+
+1.64.0.rc.1
+1.64.0.beta.1
+1.65.0.beta.1.rc.2
+1.64.0
+");
+
+function main($args) {
+    $command_line_options = CommandLineOptions::create($_SERVER['argv'],
+        trim(str_replace('{}', basename(__FILE__), GET_RELEASE_DOWNLOAD_USAGE)));
+    $options = $command_line_options->processArgs();
+    if (is_numeric($options)) { exit($options); }
+
+    $bintray_version = null;
+    // 2021, not using this:
+    $bintray_url = null;
+
+    switch (count($options->arguments)) {
+    case 0:
+        echo $command_line_options->usage("Error: version required.\n\n{$command_line_options->description}");
+        exit(1);
+    // case 2:
+    //    $bintray_url = $options->arguments[1]->arg;
+    case 1:
+        $bintray_version = $options->arguments[0]->arg;
+        break;
+    default:
+        echo $command_line_options->usage("Error: too many arguments");
+        exit(1);
+    }
+
+    Settings::init($options->toArray());
+
+    // Get a copy of boost
+    // $boost_repo = new BoostRepo();
+    // $boost_repo->setupFullCheckout();
+
+    // Get a copy of the website, and start up the php libs.
+
+    $website_repo = new WebsiteRepo();
+    $website_repo->setupCleanCheckout();
+    $website_repo->setupForRun();
+    require_once($website_repo->path.'/common/code/boost.php');
+
+    // Strip release candidate details as BoostVersion doesn't understand them.
+
+    $is_release_candidate = preg_match("@^(.*)[.]rc[.]?\d*$@", $bintray_version, $match);
+    $version2 = $is_release_candidate ? $match[1] : $bintray_version;
+
+    // Parse the version
+
+    try {
+        $version_object = BoostVersion::from($version2);
+    } catch (BoostVersion_Exception $e) {
+        echo "Failed to interpret version {$bintray_version}\n";
+        exit(1);
+    }
+
+    $cache = new ArtifactoryCache;
+
+    if ($bintray_url) {
+        // Get the bintray details from the URL
+
+        // 2021 removing
+        //  if (!preg_match('@/boostorg/([^/]+/[^/]+)/@', $bintray_url, $match)) {
+        //      throw new RuntimeException("Unable to interpret URL: {$bintray_url}");
+        //  }
+        //  $file_details = $cache->fetchDetails($bintray_version, $match[1]);
+    } else {
+        // Use default location for version
+        // Note: This isn't working for 1.65.0 betas.
+        $file_details = $cache->fetchDetails($bintray_version);
+    }
+
+    // Download the documentation
+    // TODO: Should I really be installing the documentation here?
+    //       Maybe only on the server?
+
+    $install_path = Documentation::install($cache, $file_details, $version_object->dir());
+
+    // Update documentation list
+
+    Log::info("Update documentation list");
+    echo "php {$website_repo->path}/site-tools/update-doc-list.php --quiet {$install_path} '{$version_object}'\n";
+    passthru("php {$website_repo->path}/site-tools/update-doc-list.php ".
+        "--quiet {$install_path} '{$version_object}'", $status);
+    if ($status != 0) {
+        echo "Error running update-doc-list.php\n";
+        exit(1);
+    }
+
+    // Get the download details from bintray
+
+    // TODO: This was already downloaded for the documentation.
+    $downloads = get_download_details($file_details);
+
+    if (!$downloads) {
+        echo "Didn't find any downloads on Bintray.\n";
+        exit(1);
+    }
+
+    // Update releases
+
+    Log::info("Update release data");
+    $releases = new BoostReleases($website_repo->path.'/generated/state/release.txt');
+    $releases->set_release_data('boost', $version_object, array(
+        'download_page' => $file_details->getDownloadPage(),
+        'downloads' => $downloads,
+    ));
+    $short_doc_dir = str_replace('boost_', '', $version_object->dir());
+    $releases->addDocumentation('boost', $version_object, "/doc/libs/{$short_doc_dir}/");
+    $releases->save();
+
+    if (!$is_release_candidate) {
+        Log::info("Set released in website");
+        passthru("php {$website_repo->path}/site-tools/set-release-status.php ".
+            "'{$version_object}'", $status);
+        if ($status != 0) {
+            echo "Error running set-release-status.php\n";
+            exit(1);
+        }
+    }
+
+    // Rebuild pages
+
+    Log::info("Rebuild website pages");
+    passthru("php {$website_repo->path}/site-tools/update-pages.php", $status);
+    if ($status != 0) {
+        echo "Error running update-pages\n";
+        exit(1);
+    }
+
+    // TODO: Push to github
+    //       Not doing it just yet, as I want to manually check that the update
+    //       is okay. Will have to wait until the next beta to find out for
+    //       sure.
+}
+
+function get_download_details($file_details) {
+    $extensions = array(
+        'bz2' => 'unix',
+        'gz' => 'unix',
+        'zip' => 'windows',
+        '7z' => 'windows',
+    );
+
+    $downloads = array();
+    foreach($file_details->files as $x) {
+        $extension = pathinfo($x->path, PATHINFO_EXTENSION);
+        if (array_key_exists($extension, $extensions)) {
+            $downloads[$extension] = array(
+                'line_endings' => $extensions[$extension],
+                'url' => $file_details->getFileUrl($x),
+                'sha256' => $x->sha256
+            );
+        }
+    }
+
+    return $downloads;
+}
+
+main($_SERVER['argv']);
