@@ -43,6 +43,10 @@ class RepoBase {
         return Process::read("git {$command}", $this->path);
     }
 
+    function commandWithOutputSimple($command) {
+        return Process::read("{$command}", $this->path);
+    }
+
     function readLines($command) {
         return Process::readLines("git {$command}", $this->path);
     }
@@ -71,6 +75,10 @@ class RepoBase {
                 throw($e);
             }
         }
+    }
+
+    function fetch($remote = 'origin') {
+        $this->command("fetch {$remote}");
     }
 
     // TODO: Duplicates BoostSuperProject::get_modules in the website, which also

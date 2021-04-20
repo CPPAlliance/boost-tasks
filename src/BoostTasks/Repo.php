@@ -78,6 +78,11 @@ class Repo extends RepoBase {
         $this->command("config user.name \"Automated Commit\"");
     }
 
+    function getCommitDate($commit) {
+        $output = $this->commandWithOutputSimple("TZ=UTC git show -s --date='format-local:%Y-%m-%dT%H:%M:%SZ' $commit  | grep Date: | tr -s ' ' | cut -d' ' -f 2 ");
+        return $output;
+    }
+
     function commitAll($message) {
         $this->command('add -u .');
         $status = $this->commandWithStatus('diff-index HEAD --quiet');
@@ -139,4 +144,32 @@ class Repo extends RepoBase {
 
         return $status == 0;
     }
+
+    function setupFullCheckout() {
+        // Create the repos or update them as required.
+
+        if (!is_dir($this->path)) {
+            Log::info("Clone {$this->getModuleBranchName()}.");
+            $this->cloneFullRepo();
+        }
+        else {
+            Log::info("Fetch {$this->getModuleBranchName()}.");
+            $this->updateFullRepo();
+        }
+    }
+
+    function cloneFullRepo() {
+        Process::run(
+            "git clone -b {$this->branch} ".
+            "{$this->url} {$this->path}");
+        $this->configureRepo();
+    }
+
+    function updateFullRepo() {
+        $this->fetch('origin');
+        $this->command("reset --hard origin/{$this->branch}");
+        $this->command("clean -d -f");
+        $this->configureRepo();
+    }
+
 }
