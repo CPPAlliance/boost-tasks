@@ -1,7 +1,7 @@
 
 ## site-tools
 
-This documentation contains further details about  https://github.com/boostorg/website/site-tools
+This documentation contains further details about https://github.com/boostorg/website/tree/master/site-tools
 
 The following scripts are available:
 
