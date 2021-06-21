@@ -54,7 +54,7 @@ Boost's additional test compilers include:
 This can then be copy and pasted into the release notes:  
 feed/history/boost_1_72_0.qbk
 
-and the information appears in many other files:  
+and the information appears in many other generated files, based on the .qbk file:  
 users/history/version_1_72_0.html  
 generated/dev.rss  
 generated/state/page-cache.txt  
