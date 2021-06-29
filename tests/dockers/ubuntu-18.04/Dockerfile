@@ -5,14 +5,18 @@ RUN DEBIAN_FRONTEND="noninteractive" apt-get -y install tzdata
 RUN apt-get install -y php7.2 php-xml php7.2-mysql php7.2-sqlite php7.2-curl rsync net-tools htop libxml2-utils apache2 curl wget \
     iputils-ping jq vim tree ssh unzip git mlocate nload python3 build-essential
 
-COPY api.bintray.com.ssl.conf /etc/apache2/sites-available/
+# COPY api.bintray.com.ssl.conf /etc/apache2/sites-available/
 COPY api.github.com.ssl.conf /etc/apache2/sites-available/
-COPY dl.bintray.com.ssl.conf /etc/apache2/sites-available/
+# COPY dl.bintray.com.ssl.conf /etc/apache2/sites-available/
+COPY boostorg.jfrog.io.ssl.conf /etc/apache2/sites-available/
 COPY github.com.ssl.conf /etc/apache2/sites-available/
+
+# From next section.
+#    a2ensite dl.bintray.com.ssl.conf && \
+#    a2ensite api.bintray.com.ssl.conf && \
 RUN a2ensite github.com.ssl.conf && \
-    a2ensite dl.bintray.com.ssl.conf && \
     a2ensite api.github.com.ssl.conf && \
-    a2ensite api.bintray.com.ssl.conf && \
+    a2ensite boostorg.jfrog.io.ssl.conf && \
     a2dissite 000-default.conf && \
     a2dissite default-ssl.conf && \
     a2enmod headers env cgi alias rewrite ssl && \
@@ -23,23 +27,29 @@ RUN openssl req -nodes -new -x509 -keyout myCA.key -out myCA.crt -subj "/C=US/ST
     cp myCA.crt /usr/local/share/ca-certificates/ && \
     update-ca-certificates
 
-ARG DOMAIN=api.bintray.com
-RUN openssl req -newkey rsa:2048 -nodes -keyout $DOMAIN.key -out $DOMAIN.csr -subj "/C=US/ST=New York/L=Brooklyn/O=Example Company/CN=$DOMAIN" && \
-    openssl x509 -req -days 3650 -in $DOMAIN.csr -CA myCA.crt -CAkey myCA.key -CAcreateserial -out $DOMAIN.pem -sha256 && \
-    cp $DOMAIN.pem /etc/ssl/certs/ && \
-    cp $DOMAIN.key /etc/ssl/private/ 
+# ARG DOMAIN=api.bintray.com
+# RUN openssl req -newkey rsa:2048 -nodes -keyout $DOMAIN.key -out $DOMAIN.csr -subj "/C=US/ST=New York/L=Brooklyn/O=Example Company/CN=$DOMAIN" && \
+#     openssl x509 -req -days 3650 -in $DOMAIN.csr -CA myCA.crt -CAkey myCA.key -CAcreateserial -out $DOMAIN.pem -sha256 && \
+#     cp $DOMAIN.pem /etc/ssl/certs/ && \
+#     cp $DOMAIN.key /etc/ssl/private/
 
 ARG DOMAIN=api.github.com
 RUN openssl req -newkey rsa:2048 -nodes -keyout $DOMAIN.key -out $DOMAIN.csr -subj "/C=US/ST=New York/L=Brooklyn/O=Example Company/CN=$DOMAIN" && \
     openssl x509 -req -days 3650 -in $DOMAIN.csr -CA myCA.crt -CAkey myCA.key -CAcreateserial -out $DOMAIN.pem -sha256 && \
     cp $DOMAIN.pem /etc/ssl/certs/ && \
-    cp $DOMAIN.key /etc/ssl/private/ 
+    cp $DOMAIN.key /etc/ssl/private/
 
-ARG DOMAIN=dl.bintray.com
+# ARG DOMAIN=dl.bintray.com
+# RUN openssl req -newkey rsa:2048 -nodes -keyout $DOMAIN.key -out $DOMAIN.csr -subj "/C=US/ST=New York/L=Brooklyn/O=Example Company/CN=$DOMAIN" && \
+#     openssl x509 -req -days 3650 -in $DOMAIN.csr -CA myCA.crt -CAkey myCA.key -CAcreateserial -out $DOMAIN.pem -sha256 && \
+#     cp $DOMAIN.pem /etc/ssl/certs/ && \
+#     cp $DOMAIN.key /etc/ssl/private/
+
+ARG DOMAIN=boostorg.jfrog.io
 RUN openssl req -newkey rsa:2048 -nodes -keyout $DOMAIN.key -out $DOMAIN.csr -subj "/C=US/ST=New York/L=Brooklyn/O=Example Company/CN=$DOMAIN" && \
     openssl x509 -req -days 3650 -in $DOMAIN.csr -CA myCA.crt -CAkey myCA.key -CAcreateserial -out $DOMAIN.pem -sha256 && \
     cp $DOMAIN.pem /etc/ssl/certs/ && \
-    cp $DOMAIN.key /etc/ssl/private/ 
+    cp $DOMAIN.key /etc/ssl/private/
 
 ARG DOMAIN=github.com
 RUN openssl req -newkey rsa:2048 -nodes -keyout $DOMAIN.key -out $DOMAIN.csr -subj "/C=US/ST=New York/L=Brooklyn/O=Example Company/CN=$DOMAIN" && \
@@ -51,6 +61,11 @@ RUN openssl req -newkey rsa:2048 -nodes -keyout $DOMAIN.key -out $DOMAIN.csr -su
 
 RUN mkdir /root/.ssh
 WORKDIR /root/.ssh
+# From below
+# mkdir -p /var/www/html/api.bintray.com && \
+# mkdir -p /var/www/html/dl.bintray.com && \
+# cp /var/www/html/index.html /var/www/html/api.bintray.com/ && \
+# cp /var/www/html/index.html /var/www/html/dl.bintray.com/
 RUN ssh-keygen -t rsa -N "" -f id_rsa && \
     mkdir /home/git/.ssh && \
     cp id_rsa /home/git/.ssh/ && \
@@ -64,12 +79,10 @@ RUN ssh-keygen -t rsa -N "" -f id_rsa && \
     chown -R dnljms:dnljms /home/dnljms/.ssh && \
     mkdir -p /home/www/shared/data/ && \
     mkdir -p /var/www/html/api.github.com && \
-    mkdir -p /var/www/html/api.bintray.com && \
-    mkdir -p /var/www/html/dl.bintray.com && \
+    mkdir -p /var/www/html/boostorg.jfrog.io && \
     mkdir -p /var/www/git && \
     cp /var/www/html/index.html /var/www/html/api.github.com/ && \
-    cp /var/www/html/index.html /var/www/html/api.bintray.com/ && \
-    cp /var/www/html/index.html /var/www/html/dl.bintray.com/
+    cp /var/www/html/index.html /var/www/html/boostorg.jfrog.io/
 
 #Download repo list
 ARG GITHUBTOKEN
@@ -111,35 +124,68 @@ RUN mkdir -p /root/scripts && \
     sed -i -e 's/^"//' -e 's/"$//' list_of_all_libraries.txt && \
     sort -o list_of_all_libraries.txt list_of_all_libraries.txt 
 
-# Download info from api.bintray.com
-RUN mkdir -p /var/www/html/api.bintray.com/packages/boostorg/master/snapshot
-WORKDIR /var/www/html/api.bintray.com/packages/boostorg/master/snapshot
-RUN wget https://api.bintray.com/packages/boostorg/master/snapshot/files
+# # Download info from api.bintray.com
+# RUN mkdir -p /var/www/html/api.bintray.com/packages/boostorg/master/snapshot
+# WORKDIR /var/www/html/api.bintray.com/packages/boostorg/master/snapshot
+# RUN wget https://api.bintray.com/packages/boostorg/master/snapshot/files
+# 
+# RUN mkdir -p /var/www/html/api.bintray.com/packages/boostorg/develop/snapshot
+# WORKDIR /var/www/html/api.bintray.com/packages/boostorg/develop/snapshot
+# RUN wget https://api.bintray.com/packages/boostorg/develop/snapshot/files
+# 
+# RUN mkdir -p /var/www/html/api.bintray.com/packages/boostorg/release/boost
+# WORKDIR /var/www/html/api.bintray.com/packages/boostorg/release/boost
+# RUN wget https://api.bintray.com/packages/boostorg/release/boost/files
 
-RUN mkdir -p /var/www/html/api.bintray.com/packages/boostorg/develop/snapshot
-WORKDIR /var/www/html/api.bintray.com/packages/boostorg/develop/snapshot
-RUN wget https://api.bintray.com/packages/boostorg/develop/snapshot/files
-
-RUN mkdir -p /var/www/html/api.bintray.com/packages/boostorg/release/boost
-WORKDIR /var/www/html/api.bintray.com/packages/boostorg/release/boost
-RUN wget https://api.bintray.com/packages/boostorg/release/boost/files
+# # Download bintray releases
+# RUN mkdir -p /var/www/html/dl.bintray.com/boostorg/release/1.64.0/source
+# WORKDIR /var/www/html/dl.bintray.com/boostorg/release/1.64.0/source
+# RUN wget https://dl.bintray.com/boostorg/release/1.64.0/source/boost_1_64_0.tar.bz2
+# 
+# RUN mkdir -p /var/www/html/dl.bintray.com/boostorg/release/1.73.0/source
+# WORKDIR /var/www/html/dl.bintray.com/boostorg/release/1.73.0/source
+# RUN wget https://dl.bintray.com/boostorg/release/1.73.0/source/boost_1_73_0.tar.bz2
+# 
+# RUN mkdir -p /var/www/html/dl.bintray.com/boostorg/develop
+# WORKDIR  /var/www/html/dl.bintray.com/boostorg/develop
+# RUN wget https://dl.bintray.com/boostorg/develop/boost_1_74_0-snapshot.tar.bz2
+# 
+# RUN mkdir -p /var/www/html/dl.bintray.com/boostorg/master
+# WORKDIR  /var/www/html/dl.bintray.com/boostorg/master
+# RUN wget https://dl.bintray.com/boostorg/master/boost_1_74_0-snapshot.tar.bz2
 
 # Download bintray releases
-RUN mkdir -p /var/www/html/dl.bintray.com/boostorg/release/1.64.0/source
-WORKDIR /var/www/html/dl.bintray.com/boostorg/release/1.64.0/source
-RUN wget https://dl.bintray.com/boostorg/release/1.64.0/source/boost_1_64_0.tar.bz2
+RUN mkdir -p /var/www/html/boostorg.jfrog.io/artifactory/main/release/1.64.0/source
+WORKDIR /var/www/html/boostorg.jfrog.io/artifactory/main/release/1.64.0/source
+RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.64.0/source/boost_1_64_0.tar.bz2
+RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.64.0/source/boost_1_64_0.7z.json
+RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.64.0/source/boost_1_64_0.tar.bz2.json
+RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.64.0/source/boost_1_64_0.tar.gz.json
+RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.64.0/source/boost_1_64_0.zip.json
 
-RUN mkdir -p /var/www/html/dl.bintray.com/boostorg/release/1.74.0/source
-WORKDIR /var/www/html/dl.bintray.com/boostorg/release/1.74.0/source
-RUN wget https://dl.bintray.com/boostorg/release/1.74.0/source/boost_1_74_0.tar.bz2
+RUN mkdir -p /var/www/html/boostorg.jfrog.io/artifactory/main/release/1.73.0/source
+WORKDIR /var/www/html/boostorg.jfrog.io/artifactory/main/release/1.73.0/source
+RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.73.0/source/boost_1_73_0.tar.bz2
+RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.73.0/source/boost_1_73_0.7z.json
+RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.73.0/source/boost_1_73_0.tar.bz2.json
+RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.73.0/source/boost_1_73_0.tar.gz.json
+RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.73.0/source/boost_1_73_0.zip.json
 
-RUN mkdir -p /var/www/html/dl.bintray.com/boostorg/develop
-WORKDIR  /var/www/html/dl.bintray.com/boostorg/develop
-RUN wget https://dl.bintray.com/boostorg/develop/boost_1_75_0-snapshot.tar.bz2
+RUN mkdir -p /var/www/html/boostorg.jfrog.io/artifactory/main/develop
+WORKDIR  /var/www/html/boostorg.jfrog.io/artifactory/main/develop
+RUN wget https://boostorg.jfrog.io/artifactory/main/develop/boost_1_77_0-snapshot.tar.bz2
+RUN wget https://boostorg.jfrog.io/artifactory/main/develop/boost_1_77_0-snapshot.7z.json
+RUN wget https://boostorg.jfrog.io/artifactory/main/develop/boost_1_77_0-snapshot.tar.bz2.json
+RUN wget https://boostorg.jfrog.io/artifactory/main/develop/boost_1_77_0-snapshot.tar.gz.json
+RUN wget https://boostorg.jfrog.io/artifactory/main/develop/boost_1_77_0-snapshot.zip.json
 
-RUN mkdir -p /var/www/html/dl.bintray.com/boostorg/master
-WORKDIR  /var/www/html/dl.bintray.com/boostorg/master
-RUN wget https://dl.bintray.com/boostorg/master/boost_1_75_0-snapshot.tar.bz2
+RUN mkdir -p /var/www/html/boostorg.jfrog.io/artifactory/main/master
+WORKDIR  /var/www/html/boostorg.jfrog.io/artifactory/main/master
+RUN wget https://boostorg.jfrog.io/artifactory/main/master/boost_1_77_0-snapshot.tar.bz2
+RUN wget https://boostorg.jfrog.io/artifactory/main/master/boost_1_77_0-snapshot.7z.json
+RUN wget https://boostorg.jfrog.io/artifactory/main/master/boost_1_77_0-snapshot.tar.bz2.json
+RUN wget https://boostorg.jfrog.io/artifactory/main/master/boost_1_77_0-snapshot.tar.gz.json
+RUN wget https://boostorg.jfrog.io/artifactory/main/master/boost_1_77_0-snapshot.zip.json
 
 # Clone all boostorg repos
 RUN mkdir -p /var/www/git/boostorg/
