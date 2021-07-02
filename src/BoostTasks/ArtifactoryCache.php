@@ -37,8 +37,6 @@ class ArtifactoryCache {
 
     static function parseVersion($version) {
         if (preg_match('@^(master|develop)$@i', $version, $match)) {
-            // "master" and "develop" branches do not seem to be fully supported, 
-            // either in the original script, or this one.
             return strtolower($match[0]);
         } else if (preg_match(
             '@^
@@ -77,7 +75,9 @@ class ArtifactoryCache {
               $filename_version = $parsed_version[0] . "_" . $parsed_version[1] . "_" . $parsed_version[2] ;
             }
         } else {
-            Log::error("Version is a string, such as master or develop.");
+            Log::info("Version is a string, such as master or develop.");
+              $discovered_version = self::discoverVersion($parsed_version);
+              $filename_version = $discovered_version[0] . "_" . $discovered_version[1] . "_" . $discovered_version[2] ;
              }
        return $filename_version ;
     }
@@ -86,24 +86,46 @@ class ArtifactoryCache {
         $parsed_version = self::parseVersion($version);
         if (is_array($parsed_version)) {
             if ($parsed_version[3] and $parsed_version[4]) {
-              $filename_version = $parsed_version[0] . "." . $parsed_version[1] . "." . $parsed_version[2] . "." . $parsed_version[3];
+              $directory_version = $parsed_version[0] . "." . $parsed_version[1] . "." . $parsed_version[2] . "." . $parsed_version[3];
             } else if ($parsed_version[3]) {
-              $filename_version = $parsed_version[0] . "." . $parsed_version[1] . "." . $parsed_version[2] . "." . $parsed_version[3] ;
+              $directory_version = $parsed_version[0] . "." . $parsed_version[1] . "." . $parsed_version[2] . "." . $parsed_version[3] ;
             } else if ($parsed_version[4]) {
-              $filename_version = $parsed_version[0] . "." . $parsed_version[1] . "." . $parsed_version[2] ;
+              $directory_version = $parsed_version[0] . "." . $parsed_version[1] . "." . $parsed_version[2] ;
             } else {
-              $filename_version = $parsed_version[0] . "." . $parsed_version[1] . "." . $parsed_version[2] ;
+              $directory_version = $parsed_version[0] . "." . $parsed_version[1] . "." . $parsed_version[2] ;
             }
         } else {
-            Log::error("Version is a string, such as master or develop.");
+            Log::info("Version is a string, such as master or develop.");
+              $discovered_version = self::discoverVersion($parsed_version);
+              $directory_version = $discovered_version[0] . "." . $discovered_version[1] . "." . $discovered_version[2] ;
              }
-       return $filename_version ;
+       return $directory_version ;
     }
+
+    static function discoverVersion($version) {
+        // discover version information specifically about "develop" or "master".
+        $url = "https://boostorg.jfrog.io/artifactory/api/storage/main/$version";
+        $discovered_data=json_decode(file_get_contents($url));
+        $children_list = $discovered_data->children;
+        $saved_uri="";
+        // discover the largest uri (i.e. version number)
+        foreach($children_list as $child) {
+            $uri=$child->uri;
+            if( strcmp( strtolower($saved_uri), strtolower($uri) ) < 0 ) {
+                $saved_uri = $uri;
+                }
+             }
+        preg_match('/boost_([0-9]+)_([0-9]+)_([0-9]+)-snapshot.*/', $saved_uri, $matches, PREG_OFFSET_CAPTURE);
+        // returns the version numbers in an array, because the values need to be joined with underscores or dashes in different situations.
+        return array($matches[1][0],$matches[2][0],$matches[3][0]);
+        }
 
     function fetchDetails($bintray_version, $bintray_path = null) {
         $parsed_version = self::parseVersion($bintray_version);
         $filename_version = self::parseVersionFilename($bintray_version);
         $directory_version = self::parseVersionDirectory($bintray_version);
+        // set a default
+        $filename_modifier="";
 
         $filter_by_version = false;
 
@@ -112,8 +134,9 @@ class ArtifactoryCache {
         } else if ($bintray_version == 'master' || $bintray_version == 'develop') {
             $bintray_path = "{$bintray_version}/snapshot";
             $artifactory_repo = $bintray_version;
-            $filename = "boost_" . $filename_version . "-snapshot.tar.bz2" ;
-            $artifactory_file_path = "$bintray_version";
+            // note that the filename is different, includes "-snapshot":
+            $filename_modifier="-snapshot";
+            $artifactory_file_path = "";
         //} else if (preg_match('@.*(beta|rc)\.?\d*$@', $bintray_version)) {
         //    $bintray_path = "beta/boost";
         //    $filter_by_version = true;
@@ -139,7 +162,7 @@ class ArtifactoryCache {
         $extensions = array() ;
         $extensions = ['tar.bz2','tar.gz','7z', 'zip'];
         foreach ($extensions as $extension) {
-            $filename = "boost_" . $filename_version . "." . $extension ;
+            $filename = "boost_" . $filename_version . $filename_modifier . "." . $extension ;
             $url = "https://boostorg.jfrog.io/artifactory/main/$artifactory_repo/$artifactory_file_path/$filename.json";
 
             $file_info = file_get_contents($url, false, $this->stream_context);
@@ -149,9 +172,21 @@ class ArtifactoryCache {
 
             $file_info = json_decode($file_info);
             $file_info->name = $file_info->file;
-            $file_info->path = $artifactory_file_path . "/" . $filename;
+            // $file_info->path = $artifactory_file_path . "/" . $filename;
+            $file_info->path = join("/", array_filter(array($artifactory_file_path, $filename), 'strlen'));
             $file_info->repo = $artifactory_repo;
-            $file_info->version = $directory_version;
+            // Note 2021-07: the develop snapshots should update every time the commit changes.
+            // Looking at the way the website code operates, it's expecting a commit hash.
+            // The field in the .bintray-version file is called "hash".
+            if (($artifactory_repo == "develop") || ($artifactory_repo == "master")) {
+                $file_info->version = $file_info->commit;
+            }
+            else {
+                // Note 2021-07: When it comes to "releases" rather than development snapshots,
+                // api.bintray.com had set "[version] => 1.75.0". Not a commit sha, but a version number.
+                // This analysis might not be correct and the following line could be changed to a commit sha.
+                $file_info->version = $directory_version;
+            }
             if (isset($file_info->created) and $file_info->created) {
                 // no actions needed
                 Log::debug("created field found.");
