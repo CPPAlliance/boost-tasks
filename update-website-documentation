@@ -4,7 +4,8 @@
 require_once(__DIR__.'/vendor/autoload.php');
 
 use BoostTasks\TempDirectory;
-use BoostTasks\BinTrayCache;
+// use BoostTasks\BinTrayCache;
+use BoostTasks\ArtifactoryCache;
 use BoostTasks\Documentation;
 use BoostTasks\Settings;
 use BoostTasks\CommandLineOptions;
@@ -19,7 +20,8 @@ function main() {
 
     foreach(array('master', 'develop') as $branch) {
         try {
-            $cache = new BinTrayCache;
+            // $cache = new BinTrayCache;
+            $cache = new ArtifactoryCache;
             $file_details = $cache->fetchDetails($branch);
             Documentation::install($cache, $file_details, $branch);
         }
