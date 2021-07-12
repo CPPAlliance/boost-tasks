@@ -60,4 +60,13 @@ project to update, the values are the branches to update from.
 
 ---
 
+The new script release-from-artifactory requires git version 2.x or higher. Upgrade git with these steps:  
+```
+sudo apt-get install -y software-properties-common
+sudo add-apt-repository ppa:git-core/ppa
+sudo apt update
+sudo apt install -y git
+```
+---
+
 More documentation can be found in the [docs/](docs/) directory.
