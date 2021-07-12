@@ -186,6 +186,14 @@ RUN wget https://boostorg.jfrog.io/artifactory/main/master/boost_1_77_0-snapshot
 RUN wget https://boostorg.jfrog.io/artifactory/main/master/boost_1_77_0-snapshot.tar.bz2.json
 RUN wget https://boostorg.jfrog.io/artifactory/main/master/boost_1_77_0-snapshot.tar.gz.json
 RUN wget https://boostorg.jfrog.io/artifactory/main/master/boost_1_77_0-snapshot.zip.json
+ 
+RUN mkdir -p /var/www/html/boostorg.jfrog.io/artifactory/main/beta/1.77.0.beta1/source/
+WORKDIR  /var/www/html/boostorg.jfrog.io/artifactory/main/beta/1.77.0.beta1/source/
+RUN wget https://boostorg.jfrog.io/artifactory/main/beta/1.77.0.beta1/source/boost_1_77_0_b1_rc1.tar.bz2
+RUN wget https://boostorg.jfrog.io/artifactory/main/beta/1.77.0.beta1/source/boost_1_77_0_b1_rc1.7z.json
+RUN wget https://boostorg.jfrog.io/artifactory/main/beta/1.77.0.beta1/source/boost_1_77_0_b1_rc1.tar.bz2.json
+RUN wget https://boostorg.jfrog.io/artifactory/main/beta/1.77.0.beta1/source/boost_1_77_0_b1_rc1.tar.gz.json
+RUN wget https://boostorg.jfrog.io/artifactory/main/beta/1.77.0.beta1/source/boost_1_77_0_b1_rc1.zip.json
 
 # Clone all boostorg repos
 RUN mkdir -p /var/www/git/boostorg/
