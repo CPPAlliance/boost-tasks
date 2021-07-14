@@ -1,4 +1,7 @@
-This page will discuss the sqlite database used with the boost-tasks scripts.
+This page will cover databases used with the boost-tasks scripts.
+
+- SQLite  
+- XML data files  
 
 The SQLite3 schema is in [sqlite3-schema.txt](sqlite3-schema.txt). There are 9 tables:
 
@@ -42,3 +45,33 @@ id|name|last_github_id|type
 3|master|17017172424|PushEvent
 ```
 variable - The "history" and "variable" tables are used by "update-super-project" for bookkeeping.  
+
+---
+
+The file [libraries.xml](https://github.com/boostorg/website/blob/master/doc/libraries.xml) contains many "database" records about each boost library. The format of a record is:
+
+```
+  <library>
+    <key>algorithm/minmax</key>
+    <library_path>libs/algorithm/</library_path>
+    <boost-version>1.32.0</boost-version>
+    <update-version>1.33.0</update-version>
+    <name>Min-Max</name>
+    <authors>Herv&#233; Br&#246;nnimann</authors>
+    <maintainers>Herve Bronnimann &lt;hbr -at- poly.edu&gt;</maintainers>
+    <description>Standard library extensions for simultaneous min/max and min/max element computations.</description>
+    <documentation>libs/algorithm/minmax/</documentation>
+    <category>Algorithms</category>
+  </library>
+```
+
+boost-version means initial version.  
+update-version refers to when the record was added.  
+
+The XML file contains information about all libraries, in addition to multiple records about each boost library. When data is modified, a new record is created, leaving the previous one in place. If you browse the boost.org website, and click on an earlier version of a library, it will show an earlier version of the XML record.  
+
+libraries.xml will add new records even if the version is non-standard: "master" branch, "develop" branch, or "beta" versions. 
+
+The algorithm to determine which data to display on the website is partly in BoostVersion.php, where higher numbers are assigned to "develop" than a numbered release version.  
+
+A record that has a "master" or "develop" update-version will be rewritten later to a numbered version. Long-term "historical" records with "master" or "develop" will not exist, they are replaced by real versions.  
