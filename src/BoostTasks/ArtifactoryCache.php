@@ -159,8 +159,7 @@ class ArtifactoryCache {
         // $url = "https://api.bintray.com/packages/boostorg/{$bintray_path}/files";
 
         $files = array() ;
-        $extensions = array() ;
-        $extensions = ['tar.bz2','tar.gz','7z', 'zip'];
+        $extensions = array('tar.bz2','tar.gz','7z', 'zip');
         foreach ($extensions as $extension) {
             $filename = "boost_" . $filename_version . $filename_modifier . "." . $extension ;
             $url = "https://boostorg.jfrog.io/artifactory/main/$artifactory_repo/$artifactory_file_path/$filename.json";
