@@ -220,15 +220,8 @@ RUN chmod -R 777 /var/www/git/CPPAlliance/boost-tasks/
 # Clone repos for ssh access
 RUN mkdir -p /home/git/boostorg
 WORKDIR /home/git/boostorg
-RUN git clone https://github.com/boostorg/website website.git
-WORKDIR /home/git/boostorg/website.git
-RUN git checkout beta
-RUN git checkout master
-WORKDIR /home/git/boostorg
-RUN git clone https://github.com/boostorg/boost boost.git
-WORKDIR /home/git/boostorg/boost.git
-RUN git checkout develop
-RUN git checkout master
+RUN git clone --bare https://github.com/boostorg/website website.git
+RUN git clone --bare https://github.com/boostorg/boost boost.git
 RUN chown -R git:git /home/git/boostorg
 
 # Retrieve commit info from api.github.com
