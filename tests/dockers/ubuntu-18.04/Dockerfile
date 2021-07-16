@@ -172,7 +172,7 @@ RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.73.0/source/boost_
 RUN wget https://boostorg.jfrog.io/artifactory/main/release/1.73.0/source/boost_1_73_0.zip.json
 
 RUN mkdir -p /var/www/html/boostorg.jfrog.io/artifactory/main/develop
-WORKDIR  /var/www/html/boostorg.jfrog.io/artifactory/main/develop
+WORKDIR /var/www/html/boostorg.jfrog.io/artifactory/main/develop
 RUN wget https://boostorg.jfrog.io/artifactory/main/develop/boost_1_77_0-snapshot.tar.bz2
 RUN wget https://boostorg.jfrog.io/artifactory/main/develop/boost_1_77_0-snapshot.7z.json
 RUN wget https://boostorg.jfrog.io/artifactory/main/develop/boost_1_77_0-snapshot.tar.bz2.json
@@ -180,12 +180,17 @@ RUN wget https://boostorg.jfrog.io/artifactory/main/develop/boost_1_77_0-snapsho
 RUN wget https://boostorg.jfrog.io/artifactory/main/develop/boost_1_77_0-snapshot.zip.json
 
 RUN mkdir -p /var/www/html/boostorg.jfrog.io/artifactory/main/master
-WORKDIR  /var/www/html/boostorg.jfrog.io/artifactory/main/master
+WORKDIR /var/www/html/boostorg.jfrog.io/artifactory/main/master
 RUN wget https://boostorg.jfrog.io/artifactory/main/master/boost_1_77_0-snapshot.tar.bz2
 RUN wget https://boostorg.jfrog.io/artifactory/main/master/boost_1_77_0-snapshot.7z.json
 RUN wget https://boostorg.jfrog.io/artifactory/main/master/boost_1_77_0-snapshot.tar.bz2.json
 RUN wget https://boostorg.jfrog.io/artifactory/main/master/boost_1_77_0-snapshot.tar.gz.json
 RUN wget https://boostorg.jfrog.io/artifactory/main/master/boost_1_77_0-snapshot.zip.json
+
+RUN mkdir -p /var/www/html/boostorg.jfrog.io/artifactory/api/storage/main
+WORKDIR /var/www/html/boostorg.jfrog.io/artifactory/api/storage/main
+RUN wget https://boostorg.jfrog.io/artifactory/api/storage/main/develop
+RUN wget https://boostorg.jfrog.io/artifactory/api/storage/main/master
  
 RUN mkdir -p /var/www/html/boostorg.jfrog.io/artifactory/main/beta/1.77.0.beta1/source/
 WORKDIR  /var/www/html/boostorg.jfrog.io/artifactory/main/beta/1.77.0.beta1/source/
