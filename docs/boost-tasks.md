@@ -109,7 +109,8 @@ Detailed Steps:
 - Clone boost, branch develop, in var/data/super/develop
 - Clone boost, branch master, in var/data/super/master
 - Update maintainer list for develop. This is a passthru to the website's site-tools: passthru('php '. "{$website_repo->path}/site-tools/update-repo.php ". "{$super->path} {$super->branch}", $status);  It uses "attemptAndPush", so it should commit and push the superproject to github.com if "push-to-repo: true" is set in var/config.neon
-- Update maintainer list for master, like previous step.
+- Update maintainer list for master, like previous step.  
+- The method "attemptAndPush" will return False if push isn't enabled, causing the script to fail if push isn't enabled. Adjust var/config.neon.  
 
 ------------------------------------------------------------------------------------------------------------------------------------
 
